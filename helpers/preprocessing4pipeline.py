@@ -75,6 +75,18 @@ def preprocess_epoch_hilbert(epoch_data,already_detrended=False, already_normali
 
 
 def raw_preprocess(raw,notchf=[60,120,180],downsampling=250,epoch_duration=2,detrend=False,normalise=True,apply_hilbert=False,baseline_correction=False,apply_ica=False,plot_preproc=False):
+
+    # Create a dictionary of preprocessing parameters
+    preproc_params = {
+        'notch_filter_frequencies': notchf,
+        'downsampling_rate': downsampling,
+        'epoch_duration': epoch_duration,
+        'detrend': detrend,
+        'normalise': normalise,
+        'apply_hilbert': apply_hilbert,
+        'baseline_correction': baseline_correction,
+        'apply_ica': apply_ica,
+    }
     
     #check if annotated events
     raw.info.keys()
@@ -154,6 +166,50 @@ def raw_preprocess(raw,notchf=[60,120,180],downsampling=250,epoch_duration=2,det
         epochs.plot_psd(fmin=0.5, fmax=50)  # Plot the power spectral density for the normalized data
     
 
-    return raw_filtered,epochs
+    return raw_filtered,epochs,preproc_params
 
 
+
+
+
+
+
+def save_preprocessed_data(preprocessed_data, preprocessed_folder, EEG_files, preproc_params_list, save_preproc=True):
+    if save_preproc:
+
+        # Check if "preprocessed" folder exists
+        if not os.path.exists(preprocessed_folder):
+            os.makedirs(preprocessed_folder)
+        print("Preprocessed data will be saved in the following folder: ", preprocessed_folder)
+
+        # Define the path and preproc params for the preprocessed data
+            
+        data_types = ['eeg', 'epochs']
+
+        for i, stage in enumerate(['baseline', 'end']):
+            preproc_params = preproc_params_list[i] # Get preprocessing parameters for the current stage
+
+            EEG_file = EEG_files[stage]  # Get the correct EEG file name for the stage
+            preprocessing_params_file_name = EEG_file.replace('.edf', f'_{stage}_preprocessing_params.txt')
+            preprocessing_params_file_path = os.path.join(preprocessed_folder, preprocessing_params_file_name)
+
+            with open(preprocessing_params_file_path, 'w') as f:
+                for param, value in preproc_params.items():
+                    f.write(f"{param}: {value}\n")
+
+
+            for j, data_type in enumerate(data_types):
+                # Access the correct preprocessed data
+                current_data = preprocessed_data[i*2 + j]
+
+                # Define the file name and path for each preprocessed data
+                preprocessed_file_name = EEG_file.replace('.edf', f'_{stage}_preprocessed_{data_type}.fif')
+                preprocessed_file_path = os.path.join(preprocessed_folder, preprocessed_file_name)
+                print(f"Saving preprocessed data to {preprocessed_file_path}")
+
+                # Save preprocessed data
+                current_data.save(preprocessed_file_path, overwrite=True)
+
+            # Define the path for the text file with preprocessing parameters for each stage
+            preprocessing_params_file_name = EEG_file.replace('.edf', f'_{stage}_preprocessing_params.txt')
+            preprocessing_params_file_path = os.path.join(preprocessed_folder, preprocessing_params_file_name)
