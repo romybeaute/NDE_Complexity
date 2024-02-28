@@ -131,31 +131,5 @@ def analyze_eeg_recording(EEG_file, raw_eeg):
 
 
 
-def stage_annotations(eeg_rec, time_values,stage_descriptions, sub_id,stage_start=0,plot=True):
-    # Check existing annotations
-    if len(eeg_rec.annotations) > 0:
-        print("Existing annotations found:")
-        print(eeg_rec.annotations)
-    else:
-        print("No existing annotations found. Adding new annotations...")
 
-        # Prepare new annotations
-
-        stage_durations = time_values[f"pt{sub_id}"][stage_start:] 
-        descriptions = [stage_descriptions[f"pt{sub_id}"][f"S{i+1}"] for i in range(1, len(stage_durations)+1)]  
-
-        # Create Annotations object
-        my_annotations = mne.Annotations(onset=np.cumsum([0] + stage_durations[:-1]),  # cumulative sum to get onset times
-                                        duration=stage_durations, 
-                                        description=descriptions,
-                                        orig_time=eeg_rec.info['meas_date'])
-
-        # Add annotations to the raw object
-        eeg_rec.set_annotations(my_annotations)
-
-        print("New annotations added.")
-    if plot:
-        eeg_rec.plot(title=f"Pt {sub_id}",scalings='auto')
-
-    return eeg_rec
 
