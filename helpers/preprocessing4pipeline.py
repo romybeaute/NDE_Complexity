@@ -128,17 +128,24 @@ def raw_preprocess(raw,notchf=[60,120,180],downsampling=250,epoch_duration=2,det
 
     if event_ids:
         # convert annotations to events
-        events, event_id = mne.events_from_annotations(raw_filtered, event_id=event_ids)
-        print("Events from annotations:", events)
+        events_annotated, event_id_annotated = mne.events_from_annotations(raw_filtered, event_id=None)
+        print("Events from annotations:", events_annotated)
+
+        events = mne.make_fixed_length_events(raw_filtered, duration=epoch_duration)
+
         
         if not baseline_correction:
             # Create epochs without baseline correction
-            epochs = mne.Epochs(raw_filtered, events, event_id=event_id, tmin=0, tmax=epoch_duration, preload=True, baseline=None) #no baseline correction
+            # epochs = mne.Epochs(raw_filtered, events, event_id=event_id, tmin=0, tmax=epoch_duration, preload=True, baseline=None) #no baseline correction
+            # epochs = mne.Epochs(raw_filtered, events, event_id=None, tmin=0, tmax=epoch_duration, preload=True, baseline=None) #no baseline correction
+            epochs = mne.Epochs(raw_filtered, events, tmin=0, tmax=epoch_duration, baseline=None, preload=True,picks=picks)
             print("Created 2-second epochs without baseline correction:", epochs)
 
         else:
             # Create epochs with baseline correction, assuming a suitable baseline period exists
-            epochs = mne.Epochs(raw_filtered, events, event_id=event_id, tmin=0, tmax=epoch_duration, preload=True, baseline=(-0.2, 0))
+            # epochs = mne.Epochs(raw_filtered, events, event_id=event_id, tmin=0, tmax=epoch_duration, preload=True, baseline=(-0.2, 0))
+            # epochs = mne.Epochs(raw_filtered, events, event_id=None, tmin=0, tmax=epoch_duration, preload=True, baseline=(-0.2, 0))
+            epochs = mne.Epochs(raw_filtered, events, tmin=0, tmax=epoch_duration,baseline=(-0.2, 0),preload=True,picks=picks)
             print("Created 2-second epochs with baseline correction:", epochs)
     
     
@@ -184,7 +191,7 @@ def save_preprocessed_data(preprocessed_data, preprocessed_folder, EEG_files, pr
 
         # Define the path and preproc params for the preprocessed data
             
-        data_types = ['eeg', 'epochs']
+        data_types = ['eeg', 'epo']
 
         for i, stage in enumerate(['baseline', 'end']):
             preproc_params = preproc_params_list[i] # Get preprocessing parameters for the current stage
