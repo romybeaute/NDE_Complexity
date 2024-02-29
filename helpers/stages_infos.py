@@ -1,13 +1,24 @@
+'''
+*** Tailored functions to annotate the different stages for Gang et al.,2023 dataset ***
+
+@Author: Romy Beauté
+@Contact: r.beaut@sussex.ac.uk
+@Date: 2024-02-23
+@Last modification: 2024-02-29
+'''
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import mne
 
-# sys.path.append('/Users/rb666/projects/EEGInterface_META')
+
 from helpers.helper4pipeline import read_EEG
 
 
 ### DICTIONARY OF PATIENTS AND STAGES ###
+#values of duration (in sec) for each stage
 time_values = {
 "pt1": [120, 108, 18, 18, 16, 67, 46, 51, 45, 123, 46],
 "pt2": [100, 100, 87, 157, 96, 216, 191, 773],  
@@ -128,6 +139,7 @@ def plot_patient_stages(patient_id, time_values, stage_descriptions):
     plt.legend(loc='upper left')
     plt.grid(True)
     plt.show()
+
 
 
 
