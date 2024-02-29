@@ -4,7 +4,7 @@
 @Author: Romy Beauté
 @Contact: r.beaut@sussex.ac.uk
 @Date: 2024-02-06
-@Last modification: 2024-02-22
+@Last modification: 2024-02-29
 '''
 
 import os
@@ -61,21 +61,37 @@ def analyze_eeg_recording(EEG_file, raw_eeg):
     analysis_result = {}
 
     # Calculate the duration of the recording
-    duration = len(raw_eeg) / raw_eeg.info['sfreq']
+    duration = raw_eeg.times[-1]
     analysis_result['duration'] = duration
     print(77*"-")
     print(f"Duration of {EEG_file} recording: {duration} seconds")
 
+    # # Check for annotations
+    # if len(raw_eeg.annotations) > 0:
+    #     print(f"Annotations in {EEG_file}:")
+    #     for ann in raw_eeg.annotations:
+    #         print(f" - {ann.description} at {ann.onset} seconds")
+    #     analysis_result['annotations'] = raw_eeg.annotations
+    # else:
+    #     print(f"No annotations in {EEG_file}")
+    #     analysis_result['annotations'] = None
+    # print(77*"-")
+    # return analysis_result
+
     # Check for annotations
     if len(raw_eeg.annotations) > 0:
         print(f"Annotations in {EEG_file}:")
-        for ann in raw_eeg.annotations:
-            print(f" - {ann.description} at {ann.onset} seconds")
-        analysis_result['annotations'] = raw_eeg.annotations
+        for idx in range(len(raw_eeg.annotations.description)):
+            desc = raw_eeg.annotations.description[idx]
+            onset = raw_eeg.annotations.onset[idx]
+            print(f" - {desc} at {onset} seconds")
+        # Storing annotations as a list of tuples for further processing if needed
+        analysis_result['annotations'] = list(zip(raw_eeg.annotations.description, raw_eeg.annotations.onset))
     else:
         print(f"No annotations in {EEG_file}")
         analysis_result['annotations'] = None
     print(77*"-")
+
     return analysis_result
 
 
@@ -98,36 +114,36 @@ def read_pipeline_EEG(EEG_file,DATASET_path):
     return raw
 
 
-def analyze_eeg_recording(EEG_file, raw_eeg):
-    """
-    Analyzes an EEG recording, providing its duration and any annotations present.
+# def analyze_eeg_recording(EEG_file, raw_eeg):
+#     """
+#     Analyzes an EEG recording, providing its duration and any annotations present.
     
-    Parameters:
-    EEG_file (str): The name of the EEG file.
-    raw_eeg: The raw EEG data structure.
+#     Parameters:
+#     EEG_file (str): The name of the EEG file.
+#     raw_eeg: The raw EEG data structure.
 
-    Returns:
-    dict: A dictionary containing the duration and annotations of the EEG recording.
-    """
-    analysis_result = {}
+#     Returns:
+#     dict: A dictionary containing the duration and annotations of the EEG recording.
+#     """
+#     analysis_result = {}
 
-    # Calculate the duration of the recording
-    duration = len(raw_eeg) / raw_eeg.info['sfreq']
-    analysis_result['duration'] = duration
-    print(77*"-")
-    print(f"Duration of {EEG_file} recording: {duration} seconds")
+#     # Calculate the duration of the recording
+#     duration = len(raw_eeg) / raw_eeg.info['sfreq']
+#     analysis_result['duration'] = duration
+#     print(77*"-")
+#     print(f"Duration of {EEG_file} recording: {duration} seconds")
 
-    # Check for annotations
-    if len(raw_eeg.annotations) > 0:
-        print(f"Annotations in {EEG_file}:")
-        for ann in raw_eeg.annotations:
-            print(f" - {ann.description} at {ann.onset} seconds")
-        analysis_result['annotations'] = raw_eeg.annotations
-    else:
-        print(f"No annotations in {EEG_file}")
-        analysis_result['annotations'] = None
-    print(77*"-")
-    return analysis_result
+#     # Check for annotations
+#     if len(raw_eeg.annotations) > 0:
+#         print(f"Annotations in {EEG_file}:")
+#         for ann in raw_eeg.annotations:
+#             print(f" - {ann.description} at {ann.onset} seconds")
+#         analysis_result['annotations'] = raw_eeg.annotations
+#     else:
+#         print(f"No annotations in {EEG_file}")
+#         analysis_result['annotations'] = None
+#     print(77*"-")
+#     return analysis_result
 
 
 
