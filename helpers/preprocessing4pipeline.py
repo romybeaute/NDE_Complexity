@@ -16,6 +16,8 @@ import os
 from scipy import signal
 from scipy.signal import hilbert, detrend
 
+from helpers.stages_infos import *
+
 
 
 def check_channels(raw,plot_sensors=False):
@@ -49,8 +51,8 @@ def check_channels(raw,plot_sensors=False):
         raw_EEG.plot_sensors(kind='topomap', show_names=True) #check if montage well applied
 
     # Re-reference the EEG data to the average and apply it 
-    raw_EEG.set_eeg_reference('average', projection=True)
-    raw_EEG.apply_proj()
+    raw_EEG = raw_EEG.set_eeg_reference('average', projection=True)
+    raw_EEG = raw_EEG.apply_proj()
     print("Average reference projection applied.")
 
     return raw_EEG,raw_ECG
@@ -89,13 +91,17 @@ def raw_preprocess(raw,notchf=[60,120,180],downsampling=250,epoch_duration=2,det
     }
     
     #check if annotated events
+    print("-------------DATA INFOS-----------------")
     raw.info.keys()
     raw.info['events']
     print(raw.annotations)
     events, event_ids = mne.events_from_annotations(raw)
+    print("------------------------------------")
+
 
     
     # Notch filter to remove line noise
+    print("----------PREPROCESSING 1 (ON CONTINUOUS DATA) ----------------")
     raw_filtered = raw.notch_filter(freqs=notchf)
     print("Notch filter applied at ",notchf,"Hz")
     raw_filtered = raw_filtered.resample(sfreq=downsampling)
@@ -107,7 +113,7 @@ def raw_preprocess(raw,notchf=[60,120,180],downsampling=250,epoch_duration=2,det
         ica.fit(raw_filtered)
         ica.apply(raw_filtered)
         ica.plot_components()
-        ica.plot_sources(raw_filtered, show_scrollbars=False)
+        ica.plot_sources(raw_filtered, show_scrollbars=True)
 
         raw_filtered.interpolate_bads(reset_bads=True)
 
@@ -122,7 +128,11 @@ def raw_preprocess(raw,notchf=[60,120,180],downsampling=250,epoch_duration=2,det
             f"Fraction of variance in EEG signal explained by first component: "
             f"{ratio_percent}%")
 
+    print("------------------------------------")
+
+
     # Epoching  
+    print("----------- PREPROCESSING 2 (ON EPOCHS) ----------------")
     print("Creating epochs...")
     picks = mne.pick_types(raw_filtered.info, meg=False, eeg=True,exclude=['EKG1']) #select only EEG channels
 
