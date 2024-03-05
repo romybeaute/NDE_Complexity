@@ -74,33 +74,67 @@ stage_descriptions = {
 }}
 
 
-def stage_annotations(eeg_rec, time_values,stage_descriptions, sub_id,stage_start=0,plot=True):
-    # Check existing annotations
-    if len(eeg_rec.annotations) > 0:
-        print("Existing annotations found:")
-        print(eeg_rec.annotations)
-    else:
-        print("No existing annotations found. Adding new annotations...")
 
-        # Prepare new annotations
+def annotate_stages(raw_eeg_end,patient_number,plot_annotations=True):
+    '''
+    New annotaiton function for S2-end stages in EEG raw data (before preproc stages)
+    '''
+    # Prepare new annotations
+    S2_stages_times = time_values[f'pt{patient_number}'][1:] #keep only S2-end stages
+    custom_mapping_annotations = {f"S{i+2}": i+2 for i in range(len(S2_stages_times))}
+    
+    #cumulative start and end of stages
+    S2_cumdur_start = np.cumsum([0] + S2_stages_times)[:-1] #cumulative duration of the S2-end stages
+    S2_cumdur_end = np.cumsum(S2_stages_times) #cumulative duration of the S2-end stages        
+    
+    # # Create annotations for the S2 to end EEG data
+    annotations = mne.Annotations(onset=S2_cumdur_start,
+                              duration=S2_stages_times,  
+                              description=[f"S{i+2}" for i in range(len(S2_stages_times))])  # Starting from S2
+    
+    # Add annotations to the raw object
+    raw_eeg_end = raw_eeg_end.set_annotations(annotations)
+    print(f"Annotations added to the EEG data: {raw_eeg_end.annotations.description}")
 
-        stage_durations = time_values[f"pt{sub_id}"][stage_start:] 
-        descriptions = [stage_descriptions[f"pt{sub_id}"][f"S{i+1}"] for i in range(1, len(stage_durations)+1)]  
+    events, event_id = mne.events_from_annotations(raw_eeg_end,event_id=custom_mapping_annotations)
+    
+    if plot_annotations:
+        raw_eeg_end.plot(scalings='auto', title='EEG Data with Annotations')
+        mne.viz.plot_events(events, event_id=event_id, sfreq=raw_eeg_end.info['sfreq'])
+        plot_patient_stages(patient_number, time_values[f'pt{patient_number}'], stage_descriptions[f'pt{patient_number}'])
 
-        # Create Annotations object
-        my_annotations = mne.Annotations(onset=np.cumsum([0] + stage_durations[:-1]),  # cumulative sum to get onset times
-                                        duration=stage_durations, 
-                                        description=descriptions,
-                                        orig_time=eeg_rec.info['meas_date'])
 
-        # Add annotations to the raw object
-        eeg_rec.set_annotations(my_annotations)
+    return raw_eeg_end, events, event_id
 
-        print("New annotations added.")
-    if plot:
-        eeg_rec.plot(title=f"Pt {sub_id}",scalings='auto')
 
-    return eeg_rec
+
+# def stage_annotations(eeg_rec, time_values,stage_descriptions, sub_id,stage_start=0,plot=True):
+#     # Check existing annotations
+#     if len(eeg_rec.annotations) > 0:
+#         print("Existing annotations found:")
+#         print(eeg_rec.annotations)
+#     else:
+#         print("No existing annotations found. Adding new annotations...")
+
+#         # Prepare new annotations
+
+#         stage_durations = time_values[f"pt{sub_id}"][stage_start:] 
+#         descriptions = [stage_descriptions[f"pt{sub_id}"][f"S{i+1}"] for i in range(1, len(stage_durations)+1)]  
+
+#         # Create Annotations object
+#         my_annotations = mne.Annotations(onset=np.cumsum([0] + stage_durations[:-1]),  # cumulative sum to get onset times
+#                                         duration=stage_durations, 
+#                                         description=descriptions,
+#                                         orig_time=eeg_rec.info['meas_date'])
+
+#         # Add annotations to the raw object
+#         eeg_rec.set_annotations(my_annotations)
+
+#         print("New annotations added.")
+#     if plot:
+#         eeg_rec.plot(title=f"Pt {sub_id}",scalings='auto')
+
+#     return eeg_rec
 
 
 def timing_stages():
