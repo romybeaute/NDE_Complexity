@@ -3,8 +3,8 @@
 
 @Author: Romy Beauté
 @Contact: r.beaut@sussex.ac.uk
-@Date: 2024-02-23
-@Last modification: 2024-02-29
+@Date: 23-02-2024
+@Last modification: 05-03-2024
 '''
 
 
@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import mne
-
 
 from helpers.helper4pipeline import read_EEG
 
