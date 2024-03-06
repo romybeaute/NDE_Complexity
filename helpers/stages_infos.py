@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import mne
+import pandas as pd
 
 from helpers.helper4pipeline import read_EEG
 
@@ -92,11 +93,21 @@ def annotate_stages(raw_eeg_end,patient_number,plot_annotations=True):
                               duration=S2_stages_times,  
                               description=[f"S{i+2}" for i in range(len(S2_stages_times))])  # Starting from S2
     
+    # Convert annotations to a pandas DataFrame for metadata (use for epochs later)
+    descriptions = [f"S{i+2}" for i in range(len(S2_stages_times))]
+    stages_metadata = pd.DataFrame({
+        'Stage': descriptions,
+        'Onset': S2_cumdur_start,
+        'Duration': S2_stages_times
+    })
+    
     # Add annotations to the raw object
     raw_eeg_end = raw_eeg_end.set_annotations(annotations)
     print(f"Annotations added to the EEG data: {raw_eeg_end.annotations.description}")
 
     events, event_id = mne.events_from_annotations(raw_eeg_end,event_id=custom_mapping_annotations)
+
+
     
     if plot_annotations:
         raw_eeg_end.plot(scalings='auto', title='EEG Data with Annotations')
@@ -104,7 +115,64 @@ def annotate_stages(raw_eeg_end,patient_number,plot_annotations=True):
         plot_patient_stages(patient_number, time_values[f'pt{patient_number}'], stage_descriptions[f'pt{patient_number}'])
 
 
-    return raw_eeg_end, events, event_id
+    return raw_eeg_end, events, event_id, stages_metadata
+
+
+
+
+
+def generate_epoch_metadata(epochs,patient,stages_metadata, epoch_duration=2):
+    """
+    Generate detailed metadata aligned with each epoch given stage durations (S2-end)
+
+    Parameters:
+    - epochs: The epoch MNE object after preprocessing and epoching
+    - events: Array of events used to create epochs.
+    - stages_metadata: contains onset of S2-end stages (defined in annotate_stages function)
+    - patient_number: id number of the patient
+    - epoch_duration: Duration of each epoch (in seconds).
+
+    Returns:
+    - A pandas DataFrame with detailed metadata for each epoch.
+    """
+    
+    time_values_end = time_values[f'pt{patient}'][1:] #skip S1 baseline
+
+    # Assert that the lengths of stages_metadata and time_values_end match
+    assert len(stages_metadata) == len(time_values_end), "Mismatch in length of stages_metadata and time_values_end"
+
+    print(f"Generating metadata (pt {patient}): associate {len(stages_metadata)} stages with {len(epochs)} epochs")
+    epochs_onset_times = np.arange(0, len(epochs) * epoch_duration, epoch_duration)
+
+    epochs_stages = []
+    cumulative_duration = 0
+    stage_index = 0
+
+    # Iterate through each epoch's onset time to determine its stage
+    for onset in epochs_onset_times:
+        # Check if we need to move to the next stage based on cumulative duration
+        while stage_index < len(stages_metadata) and onset >= cumulative_duration + stages_metadata.iloc[stage_index]['Duration']:
+            cumulative_duration += stages_metadata.iloc[stage_index]['Duration']
+            stage_index += 1
+        
+        # Check if the stage index is within bounds
+        if stage_index < len(stages_metadata):
+            epochs_stages.append(stages_metadata.iloc[stage_index]['Stage'])
+        else:
+            epochs_stages.append('Unknown')  # For epochs beyond the last stage's end
+
+
+    # Create DataFrame for epoch metadata
+    epochs_metadata = pd.DataFrame({
+        'Epoch Number': np.arange(1, len(epochs) + 1),
+        'Onset': epochs_onset_times,
+        'Stage': epochs_stages
+    })
+    
+
+
+    return epochs_metadata
+
 
 
 

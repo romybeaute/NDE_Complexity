@@ -164,6 +164,10 @@ def raw_preprocess(raw,notchf=[60,120,180],downsampling=250,epoch_duration=2,det
         events = mne.make_fixed_length_events(raw_filtered, duration=epoch_duration) #create events that are spaced by the duration of each epoch
         epochs = mne.Epochs(raw_filtered, events, tmin=0, tmax=epoch_duration, baseline=None, preload=True,picks=picks)
 
+
+    
+    
+
     # Detrending and normalization
     if detrend: #removes linear trends from the data => can help reduce low-freq noise
         epochs = epochs.apply_function(lambda x: signal.detrend(x, type='constant'), channel_wise=True)
